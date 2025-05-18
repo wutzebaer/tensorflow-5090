@@ -1,4 +1,3 @@
-# https://docs.nvidia.com/deeplearning/frameworks/tensorflow-release-notes/rel-25-02.html
 FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
 
 RUN apt update && \
