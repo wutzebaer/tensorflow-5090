@@ -1,4 +1,4 @@
-# TensorFlow CUDA 12.8 Build Environment
+# TensorFlow CUDA 12.8 Build Environment for RTX 5090
 
 This project provides a Docker-based environment for building TensorFlow from source with CUDA 12.8 and cuDNN support on Ubuntu 24.04. It automates the setup, build, and installation of a custom TensorFlow wheel with GPU acceleration.
 
