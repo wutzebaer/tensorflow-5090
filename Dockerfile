@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04 AS builder
 
 RUN apt update && \
     apt install -y libpq-dev wget software-properties-common lsb-release git python3 python3-venv python3-pip && \
@@ -29,11 +29,23 @@ COPY .tf_configure.bazelrc .
 # Build TensorFlow wheel
 RUN bazel build //tensorflow/tools/pip_package:wheel --repo_env=USE_PYWRAP_RULES=1 --repo_env=WHEEL_NAME=tensorflow --config=cuda --config=cuda_wheel
 
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+
+RUN apt update && \
+    apt install -y python3 python3-venv python3-pip && \
+    rm -rf /var/lib/apt/lists/*
+
 # Set up Python virtual environment and install built wheel
 WORKDIR /workspace
+COPY --from=builder /workspace/tensorflow/bazel-bin/tensorflow/tools/pip_package/wheel_house/*.whl .
 RUN python3 -m venv venv && \
     . venv/bin/activate && \
-    pip install tensorflow/bazel-bin/tensorflow/tools/pip_package/wheel_house/tensorflow-2.20.0.dev0+selfbuilt-cp312-cp312-linux_x86_64.whl
+    pip install *.whl
 
 ENV VIRTUAL_ENV=/workspace/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+
+# docker buildx create --name=builder_container --driver=docker-container
+# docker buildx use builder_container
+# docker buildx build .
