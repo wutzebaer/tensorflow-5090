@@ -48,4 +48,5 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # docker buildx create --name=builder_container --driver=docker-container
 # docker buildx use builder_container
-# docker buildx build -t wutzebaer/tensorflow-5090 .
+# docker buildx build -t wutzebaer/tensorflow-5090:latest .
+# docker push wutzebaer/tensorflow-5090:latest
