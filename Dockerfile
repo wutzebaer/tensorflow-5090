@@ -1,7 +1,7 @@
 FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04 AS builder
 
 RUN apt update && \
-    apt install -y libpq-dev wget software-properties-common lsb-release git python3 python3-venv python3-pip && \
+    apt install -y wget software-properties-common lsb-release git python3 python3-venv python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /workspace
