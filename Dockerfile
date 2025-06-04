@@ -1,14 +1,19 @@
 FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04 AS builder
 
-RUN apt update && \
-    apt install -y wget software-properties-common lsb-release git python3 python3-venv python3-pip && \
-    rm -rf /var/lib/apt/lists/*
-
 RUN mkdir /workspace
 WORKDIR /workspace
 
+# Install dependencies
+RUN --mount=target=/var/lib/apt/lists,type=cache,id=apt-lists \
+    --mount=target=/var/cache/apt,type=cache,id=apt-cache \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    apt update && \
+    apt install -y wget software-properties-common lsb-release git python3 python3-venv python3-pip
+
 # Install LLVM/Clang 20
-RUN wget https://apt.llvm.org/llvm.sh && \
+RUN --mount=target=/var/lib/apt/lists,type=cache,id=apt-lists \
+    --mount=target=/var/cache/apt,type=cache,id=apt-cache \
+    wget -O llvm.sh https://apt.llvm.org/llvm.sh && \
     chmod +x llvm.sh && \
     ./llvm.sh 20 all && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100 && \
@@ -27,26 +32,19 @@ RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.26.0/bazeli
 COPY .tf_configure.bazelrc .
 
 # Build TensorFlow wheel
-RUN bazel build //tensorflow/tools/pip_package:wheel --repo_env=USE_PYWRAP_RULES=1 --repo_env=WHEEL_NAME=tensorflow --config=cuda --config=cuda_wheel
-
-FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
-
-RUN apt update && \
-    apt install -y python3 python3-venv python3-pip && \
-    rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/root/.cache/bazel,id=bazel-cache \
+    bazel build //tensorflow/tools/pip_package:wheel --repo_env=USE_PYWRAP_RULES=1 --repo_env=WHEEL_NAME=tensorflow --config=cuda --config=cuda_wheel && \
+    cp /workspace/tensorflow/bazel-bin/tensorflow/tools/pip_package/wheel_house/*.whl /workspace
 
 # Set up Python virtual environment and install built wheel
 WORKDIR /workspace
-COPY --from=builder /workspace/tensorflow/bazel-bin/tensorflow/tools/pip_package/wheel_house/*.whl .
-RUN python3 -m venv venv && \
+RUN --mount=target=/root/.cache/pip,type=cache,id=pip-global-cache \
+    python3 -m venv venv && \
     . venv/bin/activate && \
     pip install *.whl
 
 ENV VIRTUAL_ENV=/workspace/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-
-# docker buildx create --name=builder_container --driver=docker-container
-# docker buildx use builder_container
-# docker buildx build -t wutzebaer/tensorflow-5090:latest .
-# docker push wutzebaer/tensorflow-5090:latest
+# docker buildx build -t wutzebaer/tensorflow-5090:2 .
+# docker push wutzebaer/tensorflow-5090:2
