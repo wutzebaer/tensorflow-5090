@@ -46,5 +46,5 @@ RUN --mount=target=/root/.cache/pip,type=cache,id=pip-global-cache \
 ENV VIRTUAL_ENV=/workspace/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# docker buildx build -t wutzebaer/tensorflow-5090:2 .
-# docker push wutzebaer/tensorflow-5090:2
+# docker buildx build -t wutzebaer/tensorflow-5090 .
+# docker push wutzebaer/tensorflow-5090
